@@ -19,6 +19,7 @@
 # Local QA data: screenshots, reports, backups, state, and generated demo passwords
 **/.qa/*
 **/cookies.txt
+**/uploads/*
 
 # Log dan berkas editor
 *.log
@@ -26,6 +27,10 @@
 Thumbs.db
 .idea/
 .vscode/
+# Laporan akademik dan berkas proposal
+laporan/
+Proposal-Laporan.docx
+*.pdf
 
 # Bahan acuan desain lokal; aset aplikasi yang dipakai ada di frontend/public/
 Referensi UI/

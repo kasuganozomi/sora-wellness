@@ -41,10 +41,21 @@ async function backup(): Promise<string> {
   const path = resolve(process.cwd(), '.qa', `demo-backup-${new Date().toISOString().replace(/[:.]/g, '-')}`);
   await mkdir(path, { recursive: true });
   await mkdir(uploadDir, { recursive: true });
-  const bytes = execFileSync('docker', [
-    'compose', 'exec', '-T', 'db', 'pg_dump', '-U', process.env.DB_USER ?? 'wellness',
-    '-d', process.env.DB_NAME ?? 'wellness', '-Fc',
-  ], { cwd: process.cwd(), maxBuffer: 50 * 1024 * 1024 });
+  let bytes: Buffer;
+  try {
+    bytes = execFileSync('docker', [
+      'compose', 'exec', '-T', 'db', 'pg_dump', '-U', process.env.DB_USER ?? 'wellness',
+      '-d', process.env.DB_NAME ?? 'wellness', '-Fc',
+    ], { cwd: process.cwd(), maxBuffer: 50 * 1024 * 1024 });
+  } catch {
+    const pgDumpCmd = process.platform === 'win32'
+      ? (process.env.PGDUMP_BIN ?? 'C:\\Program Files\\PostgreSQL\\18\\bin\\pg_dump.exe')
+      : 'pg_dump';
+    bytes = execFileSync(pgDumpCmd, [
+      '-h', '127.0.0.1', '-p', '55432', '-U', process.env.DB_USER ?? 'wellness',
+      '-d', process.env.DB_NAME ?? 'wellness', '-Fc',
+    ], { cwd: process.cwd(), maxBuffer: 50 * 1024 * 1024, env: { ...process.env, PGPASSWORD: process.env.DB_PASSWORD } });
+  }
   if (bytes.subarray(0, 5).toString() !== 'PGDMP') throw new Error('Cadangan PostgreSQL tidak valid');
   await writeFile(resolve(path, 'database.dump'), bytes);
   await cp(uploadDir, resolve(path, 'uploads'), { recursive: true, force: true });
